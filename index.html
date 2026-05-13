@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DUNIA BERITA | Portal Informasi Terkini</title>
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --accent: #3498db;
+            --bg: #f4f4f9;
+            --text: #333;
+            --card-bg: #fff;
+        }
+
+        /* Dark Mode Theme */
+        body.dark-mode {
+            --bg: #1a1a2e;
+            --text: #f0f0f0;
+            --card-bg: #16213e;
+            --primary: #0f3460;
+        }
+
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--text); transition: 0.3s; }
+        
+        header { 
+            background: var(--primary); color: white; padding: 20px; 
+            display: flex; justify-content: space-between; align-items: center;
+            position: sticky; top: 0; z-index: 1000;
+        }
+
+        .search-area { padding: 20px; text-align: center; background: var(--card-bg); border-bottom: 1px solid #ddd; }
+        #searchInput { 
+            padding: 12px 20px; width: 60%; border-radius: 25px; border: 1px solid #ccc; outline: none;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        nav { display: flex; justify-content: center; gap: 10px; padding: 15px; flex-wrap: wrap; }
+        nav button { 
+            padding: 10px 20px; cursor: pointer; border: none; border-radius: 20px; 
+            background: var(--accent); color: white; font-weight: bold; transition: 0.2s;
+        }
+        nav button:hover { opacity: 0.8; transform: scale(1.05); }
+
+        .grid-container { 
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px; padding: 20px; max-width: 1200px; margin: auto; 
+        }
+
+        .card { 
+            background: var(--card-bg); border-radius: 15px; overflow: hidden; 
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1); cursor: pointer; transition: 0.3s; 
+        }
+        .card:hover { transform: translateY(-10px); }
+        .card img { width: 100%; height: 180px; object-fit: cover; }
+        .card-content { padding: 15px; }
+        .tag { background: #e74c3c; color: white; padding: 3px 10px; border-radius: 5px; font-size: 11px; text-transform: uppercase; }
+
+        /* Modal / Detail View */
+        .modal { 
+            display: none; position: fixed; z-index: 2000; left: 0; top: 0; 
+            width: 100%; height: 100%; background: rgba(0,0,0,0.85); overflow-y: auto;
+        }
+        .modal-content { 
+            background: var(--card-bg); margin: 5% auto; padding: 30px; 
+            width: 90%; max-width: 750px; border-radius: 15px; position: relative;
+        }
+        .close { position: absolute; right: 20px; top: 10px; font-size: 30px; cursor: pointer; }
+
+        #toggleDark { cursor: pointer; background: #f1c40f; border: none; padding: 8px 15px; border-radius: 15px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2 style="margin:0;">DUNIA BERITA</h2>
+    <button id="toggleDark" onclick="toggleDarkMode()">🌙 Mode</button>
+</header>
+
+<div class="search-area">
+    <input type="text" id="searchInput" placeholder="Cari judul atau isi berita..." onkeyup="handleSearch()">
+</div>
+
+<nav>
+    <button onclick="renderFeed('Semua')">Semua</button>
+    <button onclick="renderFeed('Teknologi')">Teknologi</button>
+    <button onclick="renderFeed('Lingkungan')">Lingkungan</button>
+    <button onclick="renderFeed('Ekonomi')">Ekonomi</button>
+    <button onclick="renderFeed('Kesehatan')">Kesehatan</button>
+</nav>
+
+<div id="newsGrid" class="grid-container"></div>
+
+<!-- Modal Pop-up -->
+<div id="newsModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img id="modalImg" src="" style="width:100%; border-radius:10px; margin-bottom:20px; max-height: 400px; object-fit: cover;">
+        <span id="modalTag" class="tag"></span>
+        <h2 id="modalTitle" style="margin: 15px 0;"></h2>
+        <p id="modalDesc" style="line-height:1.8; font-size: 16px;"></p>
+    </div>
+</div>
+
+<script>
+    // Data berita yang lebih banyak dan bervariasi
+    const dataBerita = [
+        {
+            tag: "Teknologi",
+            title: "Revolusi Kacamata AR 2026",
+            desc: "Perusahaan raksasa teknologi meluncurkan kacamata AR yang diklaim mampu menggantikan fungsi laptop untuk bekerja di mana saja.",
+            img: "https://images.unsplash.com/photo-1592477976531-a4f6695c0148?w=600"
+        },
+        {
+            tag: "Lingkungan",
+            title: "Pembersihan Samudera Pasifik",
+            desc: "Teknologi pembersihan plastik otomatis berhasil mengangkat 500 ton sampah dari Samudera Pasifik dalam kurun waktu satu bulan.",
+            img: "https://images.unsplash.com/photo-1621451537084-482c73073a0f?w=600"
+        },
+        {
+            tag: "Ekonomi",
+            title: "Mata Uang Digital Global",
+            desc: "Bank-bank sentral dunia mulai mendiskusikan standarisasi mata uang digital untuk mempermudah transaksi antarnegara secara instan.",
+            img: "https://images.unsplash.com/photo-1621761191319-c6fb62004040?w=600"
+        },
+        {
+            tag: "Kesehatan",
+            title: "Obat Penyakit Genetik Ditemukan",
+            desc: "Tim peneliti medis mengumumkan keberhasilan terapi gen terbaru yang mampu menyembuhkan penyakit langka sejak dalam kandungan.",
+            img: "https://images.unsplash.com/photo-1579152276508-49033328256a?w=600"
+        },
+        {
+            tag: "Olahraga",
+            title: "Persiapan Piala Dunia 2026",
+            desc: "Stadion-stadion di Amerika Utara telah rampung direnovasi dengan teknologi pendingin ramah lingkungan untuk menyambut tim dunia.",
+            img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600"
+        },
+        {
+            tag: "Teknologi",
+            title: "AI Menulis Skenario Film",
+            desc: "Sebuah film pendek yang naskahnya sepenuhnya ditulis oleh AI memenangkan penghargaan di festival film independen bergengsi.",
+            img: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=600"
+        },
+        {
+            tag: "Kuliner",
+            title: "Daging Nabati Generasi Baru",
+            desc: "Tekstur dan rasa daging buatan kini semakin sulit dibedakan dengan daging asli berkat inovasi pemrosesan protein kedelai terbaru.",
+            img: "https://images.unsplash.com/photo-1584947844695-e69fc3d3fe1a?w=600"
+        },
+        {
+            tag: "Edukasi",
+            title: "Sekolah Tanpa Dinding di Bali",
+            desc: "Konsep pendidikan berbasis alam di Bali semakin diminati siswa mancanegara karena fokus pada keberlanjutan dan kreativitas.",
+            img: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=600"
+        }
+    ];
+
+    function renderFeed(filter = 'Semua', searchKeyword = '') {
+        const grid = document.getElementById('newsGrid');
+        grid.innerHTML = '';
+
+        const filteredData = dataBerita.filter(news => {
+            const matchesFilter = (filter === 'Semua' || news.tag === filter);
+            const matchesSearch = (news.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
+                                   news.desc.toLowerCase().includes(searchKeyword.toLowerCase()));
+            return matchesFilter && matchesSearch;
+        });
+
+        filteredData.forEach(news => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <img src="${news.img}" alt="news">
+                <div class="card-content">
+                    <span class="tag">${news.tag}</span>
+                    <h3>${news.title}</h3>
+                    <p>${news.desc.substring(0, 100)}...</p>
+                </div>
+            `;
+            card.onclick = () => openModal(news);
+            grid.appendChild(card);
+        });
+
+        if (filteredData.length === 0) {
+            grid.innerHTML = `<p style="text-align:center; grid-column: 1/-1;">Berita tidak ditemukan.</p>`;
+        }
+    }
+
+    function handleSearch() {
+        const keyword = document.getElementById('searchInput').value;
+        renderFeed('Semua', keyword);
+    }
+
+    function openModal(news) {
+        document.getElementById('modalTitle').innerText = news.title;
+        document.getElementById('modalDesc').innerText = news.desc;
+        document.getElementById('modalTag').innerText = news.tag;
+        document.getElementById('modalImg').src = news.img;
+        document.getElementById('newsModal').style.display = "block";
+        document.body.style.overflow = "hidden"; // Disable scroll
+    }
+
+    function closeModal() {
+        document.getElementById('newsModal').style.display = "none";
+        document.body.style.overflow = "auto"; // Enable scroll
+    }
+
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const btn = document.getElementById('toggleDark');
+        btn.innerText = document.body.classList.contains('dark-mode') ? "☀️ Mode" : "🌙 Mode";
+    }
+
+    // Tutup modal jika klik di area hitam (luar kotak)
+    window.onclick = (e) => {
+        if (e.target.id === 'newsModal') closeModal();
+    }
+
+    // Jalankan pertama kali
+    window.onload = () => renderFeed('Semua');
+</script>
+
+</body>
+</html>
